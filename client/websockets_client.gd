@@ -46,4 +46,3 @@ func send_packet(packet: Packet) -> void:
 func _send_string(string: String) -> void:
 	socket.send_text(string)
 	print("Sent string ", string)
-
