@@ -33,5 +33,5 @@ if __name__ == '__main__':
     factory = GameFactory('0.0.0.0', PORT)
 
     reactor.listenTCP(PORT, factory)
-    log.info(test)
+    log.msg(test)
     reactor.run()
