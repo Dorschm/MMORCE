@@ -1,0 +1,4 @@
+res://default_env.tres
+res://Main.tscn
+res://websockets_client.gd
+res://Main.gd
