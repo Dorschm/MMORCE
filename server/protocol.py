@@ -4,7 +4,7 @@ import queue
 import time
 import manage
 import packet
-import models
+from djangofolder import models
 from autobahn.twisted.websocket import WebSocketServerProtocol
 from autobahn.exception import Disconnected
 from django.contrib.auth import authenticate
