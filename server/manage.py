@@ -8,7 +8,7 @@ root = file.parents[1]
 sys.path.append(str(root))
 
 INSTALLED_APPS = [
-    'django/models.py',
+    'djangofolder',
     'django.contrib.auth',
     'django.contrib.contenttypes'
 ]
