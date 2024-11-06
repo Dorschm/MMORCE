@@ -2,9 +2,22 @@ import manage
 import sys
 import protocol
 from twisted.python import log
-from twisted.internet import reactor, task, ssl
+from twisted.internet import reactor, task, ssl, defer
+from twisted.protocols import basic
+from twisted.web import server
 from autobahn.twisted.websocket import WebSocketServerFactory
+from twisted.web.server import Site
+from twisted.web.static import File
+from OpenSSL import crypto
+import os
 
+# Enforce specific TLS version in the context factory
+class CustomCertificateOptions(ssl.CertificateOptions):
+    def __init__(self, privateKey, certificate, tls_version=ssl.TLSv1_2_METHOD):
+        # Call the parent class constructor with required parameters
+        super().__init__(privateKey=privateKey, certificate=certificate)
+        # Set the desired TLS version (TLSv1.2 or TLSv1.3)
+        self.method = tls_version
 
 class GameFactory(WebSocketServerFactory):
     def __init__(self, hostname: str, port: int):
@@ -38,16 +51,23 @@ if __name__ == '__main__':
     stdout_handler.setFormatter(format)
     logger.addHandler(stdout_handler)
 
+    # Load certificate and private key data
     certs_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "certs")
     private_key_data = open(os.path.join(certs_dir, "server.key"), "rb").read()
     certificate_data = open(os.path.join(certs_dir, "server.crt"), "rb").read()
 
+    # Load private key and certificate from PEM files
     private_key = crypto.load_privatekey(crypto.FILETYPE_PEM, private_key_data)
     certificate = crypto.load_certificate(crypto.FILETYPE_PEM, certificate_data)
 
-    cert_options = CertificateOptions(
+    # Define the TLS version you want to enforce
+    tls_version = ssl.TLSv1_2_METHOD  # You can change this to ssl.TLSv1_3_METHOD if needed
+
+    # Create a custom certificate options object with the specified TLS version
+    cert_options = CustomCertificateOptions(
         privateKey=private_key,
         certificate=certificate,
+        tls_version=tls_version  # Pass the TLS version here
     )
 
     PORT: int = 8081
