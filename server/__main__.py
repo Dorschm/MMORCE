@@ -10,6 +10,7 @@ from twisted.web.server import Site
 from twisted.web.static import File
 from OpenSSL import crypto
 import os
+import logging
 
 # Enforce specific TLS version in the context factory
 class CustomCertificateOptions(ssl.CertificateOptions):
@@ -42,6 +43,8 @@ class GameFactory(WebSocketServerFactory):
 
 if __name__ == '__main__':
     print("Starting")
+    
+    # Set up logging
     logger = logging.getLogger('')
     logger.setLevel(logging.DEBUG)
     format = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
@@ -60,7 +63,7 @@ if __name__ == '__main__':
     private_key = crypto.load_privatekey(crypto.FILETYPE_PEM, private_key_data)
     certificate = crypto.load_certificate(crypto.FILETYPE_PEM, certificate_data)
 
-    # Define the TLS version you want to enforce
+    # Define the TLS version you want to enforce (use TLSv1_2_METHOD or TLSv1_3_METHOD)
     tls_version = ssl.TLSv1_2_METHOD  # You can change this to ssl.TLSv1_3_METHOD if needed
 
     # Create a custom certificate options object with the specified TLS version
@@ -70,10 +73,15 @@ if __name__ == '__main__':
         tls_version=tls_version  # Pass the TLS version here
     )
 
+    # Define the port for the server
     PORT: int = 8081
     factory = GameFactory('0.0.0.0', PORT)
 
+    # Log the server start
     logger.info(f"Server listening on port {PORT}")
+    
+    # Start the SSL reactor with the custom certificate options
     reactor.listenSSL(PORT, factory, cert_options)
 
+    # Run the reactor to handle incoming connections
     reactor.run()
