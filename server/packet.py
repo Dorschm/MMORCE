@@ -1,7 +1,6 @@
 import json
 import enum
 
-
 class Action(enum.Enum):
     Ok = enum.auto()
     Deny = enum.auto()
@@ -11,7 +10,6 @@ class Action(enum.Enum):
     Chat = enum.auto()
     ModelDelta = enum.auto()
     Target = enum.auto()
-
 
 class Packet:
     def __init__(self, action: Action, *payloads):
@@ -60,7 +58,6 @@ class TargetPacket(Packet):
     def __init__(self, t_x: float, t_y: float):
         super().__init__(Action.Target, t_x, t_y)
 
-
 def from_json(json_str: str) -> Packet:
     obj_dict = json.loads(json_str)
 
@@ -69,7 +66,6 @@ def from_json(json_str: str) -> Packet:
     for key, value in obj_dict.items():
         if key == 'a':
             action = value
-
         elif key[0] == 'p':
             index = int(key[1:])
             payloads.insert(index, value)
@@ -80,8 +76,6 @@ def from_json(json_str: str) -> Packet:
         constructor: type = globals()[class_name]
         return constructor(*payloads)
     except KeyError as e:
-        print(
-            f"{class_name} is not a valid packet name. Stacktrace: {e}")
-    except TypeError:
-        print(
-            f"{class_name} can't handle arguments {tuple(payloads)}.")
+        print(f"{class_name} is not a valid packet name. Stacktrace: {e}")
+    except TypeError as e:
+        print(f"{class_name} can't handle arguments {tuple(payloads)}. Stacktrace: {e}")
