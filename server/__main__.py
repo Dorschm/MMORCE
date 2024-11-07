@@ -42,7 +42,7 @@ if __name__ == '__main__':
     logger.addHandler(stdout_handler)
 
     # Define the port for the server...
-    PORT: int = 8081
+    PORT: int = 80
     factory = GameFactory('0.0.0.0', PORT)
 
     # Log the server start
