@@ -11,9 +11,9 @@ signal error
 var socket = WebSocketPeer.new()
 
 func _ready():
-	var hostname = "cartandpod.com"  # Replace with your actual domain
+	var hostname = "cartandpod.com"  # Your actual domain
 	var port = 80  # Use port 80 for HTTP, as Cloudflare handles SSL/TLS
-	var websocket_url = "ws://%s:%d" % [hostname, port]
+	var websocket_url = "wss://%s:%d" % [hostname, port]
 	var err = socket.connect_to_url(websocket_url)
 
 	if err != OK:
