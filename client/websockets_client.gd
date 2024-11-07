@@ -41,7 +41,10 @@ func _process(delta):
 
 func send_packet(packet: Packet) -> void:
 	# Sends a packet to the server
-	_send_string(packet.tostring())
+	if socket.get_ready_state() == WebSocketPeer.STATE_OPEN:
+		_send_string(packet.tostring())
+	else:
+		print("WebSocket is not open. Cannot send data.")
 
 func _send_string(string: String) -> void:
 	socket.send_text(string)
