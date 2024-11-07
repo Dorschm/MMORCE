@@ -1,19 +1,12 @@
-import logging
 import math
-from autobahn.twisted.websocket import WebSocketServerProtocol
-from autobahn.exception import Disconnected
-import json
+import utils
 import queue
 import time
-import utils
-import manage
-import packet
-from djangofolder import models
+from server import packet
+from server import models
+from autobahn.twisted.websocket import WebSocketServerProtocol
+from autobahn.exception import Disconnected
 from django.contrib.auth import authenticate
-
-# Configure logging
-logging.basicConfig(level=logging.DEBUG)
-logger = logging.getLogger(__name__)
 
 class GameServerProtocol(WebSocketServerProtocol):
     def __init__(self):
@@ -26,22 +19,33 @@ class GameServerProtocol(WebSocketServerProtocol):
         self._known_others: set['GameServerProtocol'] = set()
 
     def LOGIN(self, sender: 'GameServerProtocol', p: packet.Packet):
-        logger.debug("LOGIN state: processing packet")
         if p.action == packet.Action.Login:
             username, password = p.payloads
 
+            # Try to get an existing user whose credentials match
             user = authenticate(username=username, password=password)
-            if user:
-                self._actor = models.Actor.objects.get(user=user)
-                
-                self.send_client(packet.OkPacket())
-
-                # Send full model data the first time we log in
-                self.broadcast(packet.ModelDeltaPacket(models.create_dict(self._actor)))
-
-                self._state = self.PLAY
-            else:
+            
+            # If credentials don't match, deny and return
+            if not user:
                 self.send_client(packet.DenyPacket("Username or password incorrect"))
+                return
+
+            # If user already logged in, deny and return
+            if user.id in self.factory.user_ids_logged_in:
+                self.send_client(packet.DenyPacket("You are already logged in"))
+                return
+
+            # Otherwise, proceed
+            self._actor = models.Actor.objects.get(user=user)
+            self.send_client(packet.OkPacket())
+
+            # Send full model data the first time we log in
+            self.broadcast(packet.ModelDeltaPacket(models.create_dict(self._actor)))
+
+            self.factory.user_ids_logged_in.add(user.id)
+
+            self._state = self.PLAY
+                
 
         elif p.action == packet.Action.Register:
             username, password, avatar_id = p.payloads
@@ -65,7 +69,6 @@ class GameServerProtocol(WebSocketServerProtocol):
             self.send_client(packet.OkPacket())
 
     def PLAY(self, sender: 'GameServerProtocol', p: packet.Packet):
-        logger.debug("PLAY state: processing packet")
         if p.action == packet.Action.Chat:
             if sender == self:
                 self.broadcast(p, exclude_self=True)
@@ -87,7 +90,6 @@ class GameServerProtocol(WebSocketServerProtocol):
             self.send_client(p)
 
     def _update_position(self) -> bool:
-        logger.debug("Updating position")
         "Attempt to update the actor's position and return true only if the position was changed"
         if not self._player_target:
             return False
@@ -115,11 +117,10 @@ class GameServerProtocol(WebSocketServerProtocol):
         return True
 
     def tick(self):
-        logger.debug("Ticking")
         # Process the next packet in the queue
         if not self._packet_queue.empty():
             s, p = self._packet_queue.get()
-            logger.debug(f"Processing packet {s} {p}")
+            print(f"processing packet {s} {p}")
             self._state(s, p)
 
         # To do when there are no packets to process
@@ -131,7 +132,6 @@ class GameServerProtocol(WebSocketServerProtocol):
 
 
     def broadcast(self, p: packet.Packet, exclude_self: bool = False):
-        logger.debug("Broadcasting packet")
         for other in self.factory.players:
             if other == self and exclude_self:
                 continue
@@ -139,52 +139,42 @@ class GameServerProtocol(WebSocketServerProtocol):
 
     # Override
     def onConnect(self, request):
-        logger.info(f"Client connecting: {request.peer}")
         print(f"Client connecting: {request.peer}")
 
     # Override
     def onOpen(self):
-        logger.info("WebSocket connection open.")
         print(f"Websocket connection open.")
 
     # Override
     def onClose(self, wasClean, code, reason):
-        logger.info(f"WebSocket connection closed{' unexpectedly' if not wasClean else ' cleanly'} with code {code}: {reason}")
         if self._actor:
             self._actor.save()
             self.broadcast(packet.DisconnectPacket(self._actor.id), exclude_self=True)
-        self.factory.players.remove(self)
+        self.factory.remove_protocol(self)
         print(f"Websocket connection closed{' unexpectedly' if not wasClean else ' cleanly'} with code {code}: {reason}")
 
     # Override
     def onMessage(self, payload, isBinary):
-        logger.debug("Received message")
         decoded_payload = payload.decode('utf-8')
 
         try:
             p: packet.Packet = packet.from_json(decoded_payload)
-            logger.debug(f"Decoded packet: {p}")
             print(p)
         except Exception as e:
             p = None
-            logger.error(f"Could not load message as packet: {e}. Message was: {payload.decode('utf8')}")
             print(f"Could not load message as packet: {e}. Message was: {payload.decode('utf8')}")
 
         self.onPacket(self, p)
 
     def onPacket(self, sender: 'GameServerProtocol', p: packet.Packet):
-        logger.debug(f"Queued packet: {p}")
         self._packet_queue.put((sender, p))
         print(f"Queued packet: {p}")
 
     def send_client(self, p: packet.Packet):
-        logger.debug(f"Sending packet to client: {p}")
         b = bytes(p)
         try:
             self.sendMessage(b)
         except Disconnected:
-            logger.warning(f"Couldn't send {p} because client disconnected.")
             print(f"Couldn't send {p} because client disconnected.")
-        except Exception as e:
-            logger.error(f"Error sending message: {e}")
-            print(f"Error sending message: {e}")
+
+
