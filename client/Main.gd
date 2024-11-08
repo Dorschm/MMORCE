@@ -142,5 +142,3 @@ func _unhandled_input(event: InputEvent):
 		_player_actor._player_target = target
 		var p: Packet = Packet.new("Target", [target.x, target.y])
 		_network_client.send_packet(p)
-
-

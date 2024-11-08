@@ -1,5 +1,4 @@
 res://default_env.tres
-res://Chatbox.tscn
 res://Main.tscn
-res://websockets_client.gd
 res://Main.gd
+res://websockets_client.gd

@@ -2,8 +2,6 @@ import manage
 import os
 import protocol
 import sys
-
-from twisted.internet import reactor, ssl
 import logging
 from autobahn.twisted.websocket import WebSocketServerFactory
 from OpenSSL import crypto
