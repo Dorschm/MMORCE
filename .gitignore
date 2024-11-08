@@ -1,24 +1,24 @@
 *.cache
 *.cfg
-#server/__pycache__
-#server/venv
-#server/db.sqlite3
-#server/migrations
-#server/certs
+server/__pycache__
+server/venv
+server/db.sqlite3
+server/migrations
+server/certs
 .vs/
 
 
 # Godot-specific ignores
-#client/.import/
-#client/export.cfg
-#client/export_presets.cfg
+client/.import/
+client/export.cfg
+client/export_presets.cfg
 
 # Imported translations (automatically generated from CSV files)
-#client/*.translation
+client/*.translation
 
 # Mono-specific ignores
-#client/.mono/
-#client/data_*/
+client/.mono/
+client/data_*/
 
-#client/HTML5/
-#/.github/workflows
+client/HTML5/
+/.github/workflows
